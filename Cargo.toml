@@ -1,5 +1,13 @@
 [package]
-name = "nano_game"
+name = "nano"
 version = "0.0.1"
 edition = "2024"
 
+[dependencies]
+bevy = "0.18.1"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
