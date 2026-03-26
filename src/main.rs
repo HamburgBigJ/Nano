@@ -1,6 +1,13 @@
+mod player;
+mod components;
 
-
+use bevy::prelude::*;
 
 fn main() {
-    println!("hello world");
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .run();
+ 
 }
+
+
