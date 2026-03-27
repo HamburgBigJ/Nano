@@ -18,18 +18,18 @@ rustup target add wasm32-unknown-unknown
 Editor:
 ´´´
 cargo run --bin editor
-´´´
+```
 
 Game:
 Desktop:
-´´´
+```
 cargo run --bin game
-´´´
+```
 
 **May be not ready yet**
 Web: 
-´´´
+```
 build --target wasm32-unknown-unknown
 
 trunk serve
-´´´
+```
