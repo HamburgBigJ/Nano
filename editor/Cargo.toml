@@ -1,0 +1,9 @@
+[package]
+name = "editor"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+# Change this line:
+common = { workspace = true }
+bevy = { workspace = true }

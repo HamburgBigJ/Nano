@@ -1,13 +1,22 @@
-[package]
-name = "nano"
-version = "0.0.1"
+[workspace]
+resolver = "3"
+members = [
+    "common", 
+    "editor",
+    "game"
+]
+
+[workspace.package]
+version = "0.1.0"
 edition = "2024"
+authors = ["HamburgBigJ"]
 
-[dependencies]
+[workspace.dependencies]
 bevy = "0.18.1"
+common = { path = "common" }
 
-[profile.dev]
-opt-level = 1
 
-[profile.dev.package."*"]
-opt-level = 3
+[profile.release]
+lto = true
+opt-level = 's'
+codegen-units = 1

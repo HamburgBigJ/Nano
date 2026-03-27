@@ -1,13 +1,11 @@
-mod player;
-mod components;
-mod tests;
+use bevy::{DefaultPlugins, app::App};
 
-use bevy::prelude::*;
+
+
+
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .run();
 }
-
-

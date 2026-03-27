@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::player::player;
 
 
-struct PlayerPlugin;
+pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {

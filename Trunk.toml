@@ -1,0 +1,5 @@
+[build]
+target = "game/index.html"
+
+[[bin]]
+name = "game"

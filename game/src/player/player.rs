@@ -1,10 +1,11 @@
 use bevy::{ecs::{component::Component, system::Commands}, math::Vec3};
-
+use common::components::position::Position;
 
 #[derive(Component)]
-struct Player {
+pub struct Player {
     name: String,
-    id: i32
+    id: i32,
+    position: Position
 }
 
 
