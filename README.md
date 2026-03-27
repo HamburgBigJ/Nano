@@ -16,7 +16,7 @@ rustup target add wasm32-unknown-unknown
 
 ## Build / Run
 Editor:
-´´´
+```
 cargo run --bin editor
 ```
 
