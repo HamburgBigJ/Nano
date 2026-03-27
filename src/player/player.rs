@@ -1,4 +1,4 @@
-use bevy::{ecs::{component::Component, system::{Commands}}, *};
+use bevy::{ecs::{component::Component, system::Commands}, math::Vec3};
 
 
 #[derive(Component)]
@@ -10,8 +10,9 @@ struct Player {
 
 
 
-pub fn setupPlayer(mut commands: Commands) {
+pub fn setup_player(_commands: Commands) {
     // TODO: implementation for spanwing of player 
-}
 
+        
+}
 // TODO: implementation for contolls etc
