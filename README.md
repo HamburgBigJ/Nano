@@ -3,7 +3,7 @@
 ## Dependencys:
 
 for web:
-´´´
+```
 cargo install wasm-server-runner
 cargo install --locked trunk
 ´´´
