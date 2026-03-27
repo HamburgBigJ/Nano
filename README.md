@@ -6,7 +6,7 @@ for web:
 ```
 cargo install wasm-server-runner
 cargo install --locked trunk
-´´´
+```
 maby:
 ```
 rustup target add wasm32-unknown-unknown
