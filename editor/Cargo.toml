@@ -7,3 +7,6 @@ edition = { workspace = true }
 # Change this line:
 common = { workspace = true }
 bevy = { workspace = true }
+bevy_egui = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
