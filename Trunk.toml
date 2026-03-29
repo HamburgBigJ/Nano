@@ -3,3 +3,7 @@ target = "game/index.html"
 
 [[bin]]
 name = "game"
+
+[[copy]]
+source = "static/assets"
+dest = "assets"

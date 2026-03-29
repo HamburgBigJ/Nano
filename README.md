@@ -27,9 +27,8 @@ cargo run --bin game
 ```
 
 **May be not ready yet**
-Web: 
+Web: Currenty complety broken
 ```
-build --target wasm32-unknown-unknown
-
+cargo build --target wasm32-unknown-unknown
 trunk serve
 ```
