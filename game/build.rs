@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::Path;
+
 
 fn main() {
+    /*
     let src = Path::new("assets");
 
     let dest = Path::new("../static/assets");
@@ -12,8 +12,9 @@ fn main() {
     } else {
         println!("cargo:warning=Assets folder not found, skipping copy");
     }
+    */
 }
-
+/*
 fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;
@@ -34,3 +35,4 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
 
     Ok(())
 }
+*/

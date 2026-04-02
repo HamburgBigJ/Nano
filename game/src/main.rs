@@ -1,16 +1,13 @@
 mod player;
+mod assets;
 
-
-
+use bevy::ecs::error::info;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use common::assets::assets::AssetLoader;
-
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen_futures::spawn_local;
-#[cfg(target_arch = "wasm32")]
-use web_sys::console;
-
+use rust_embed::Embed;
+use serde_json::Value;
+use common::components::scene::{GameObject, GameScene};
+use crate::assets::game_assets::GameAssets;
 use crate::player::player_plugin::PlayerPlugin;
 
 fn main() {
@@ -36,23 +33,17 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn(Camera3d::default());
 
-    #[cfg(target_arch = "wasm32")]
-    {
-        let loader = AssetLoader::new("assets");
-        spawn_local(async move {
-            match loader.load_scene_async("level/map_test.json").await {
-                Ok(scene) => console::log_1(&format!("Scene loaded: {:?}", scene).into()),
-                Err(e) => console::log_1(&format!("Failed to load scene: {}", e).into()),
-            }
-        });
-    }
 
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        let loader = AssetLoader::new("game/assets");
-        match loader.load_scene("level/map_test.json") {
-            Ok(scene) => info!("Scene loaded: {:?}", scene),
-            Err(e) => info!("Failed to load scene: {}", e),
-        }
-    }
+
+    let testjsondata = GameAssets::get("level/map_test.json").unwrap();
+
+    let test_map: GameScene = serde_json::from_slice(&testjsondata.data).unwrap();
+
+
+    let onject_rock = GameAssets::get(&test_map.entities[0].file).unwrap();
+    let object_rock: GameObject = serde_json::from_slice(&onject_rock.data).unwrap();
+    info!("{:?}", object_rock);
+    info!("{:?}", test_map);
+
 }
+

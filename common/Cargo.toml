@@ -8,6 +8,4 @@ bevy = { workspace = true }
 bevy_egui = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-wasm-bindgen = { workspace = true }
-gloo-net = { workspace = true }
-wasm-bindgen-futures = { workspace = true }
+rust-embed = { workspace = true }

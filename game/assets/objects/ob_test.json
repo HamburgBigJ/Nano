@@ -1,9 +1,13 @@
 {
     "id": "ob_test",
-    "assets": "textures/stone.png",
+    "assets": "textures/stone.jpg",
     "collision": {
         "type": "box",
         "width": 32.0,
+        "height": 10.0
+    },
+    "scale" : {
+        "width": 10.0,
         "height": 10.0
     }
 }

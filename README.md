@@ -26,9 +26,15 @@ Desktop:
 cargo run --bin game
 ```
 
-**May be not ready yet**
-Web: Currenty complety broken
+**May have some problems**
 ```
 cargo build --target wasm32-unknown-unknown
 trunk serve
 ```
+
+
+
+
+Bevy insperation:
+
+https://bevy.org/examples/

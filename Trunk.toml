@@ -4,6 +4,5 @@ target = "game/index.html"
 [[bin]]
 name = "game"
 
-[[copy]]
-source = "static/assets"
-dest = "assets"
+# Assets included in binary
+# Path may be incorect
