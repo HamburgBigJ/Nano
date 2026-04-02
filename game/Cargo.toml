@@ -10,6 +10,7 @@ bevy_egui = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 rust-embed = { workspace = true }
+image = { workspace = true }
 
 # only for the game editor excludet
 [target.'cfg(target_arch = "wasm32")'.dependencies]
