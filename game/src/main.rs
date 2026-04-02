@@ -10,7 +10,7 @@ use bevy_egui::EguiPlugin;
 use rust_embed::Embed;
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
-use crate::assets::game_assets::{GameAssets, ResourcesRegistry};
+use crate::assets::game_assets::{debug_registry, GameAssets, ResourcesRegistry};
 use crate::player::player_plugin::PlayerPlugin;
 
 fn main() {
@@ -44,16 +44,35 @@ fn main() {
         .add_systems(PreStartup, init_app)
 
 
+        .init_asset::<GameObject>()
+        .init_asset::<GameScene>()
+
         .run();
 }
 
 fn init_app(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
+    mut mesh: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+    mut audio: ResMut<Assets<AudioSource>>,
+    mut font: ResMut<Assets<Font>>,
+    mut game_scenes: ResMut<Assets<GameScene>>,
+    mut game_objects: ResMut<Assets<GameObject>>,
 ) {
 
     // Embeddeed asset regestry
-    let registry = GameAssets::init_registry(&mut images);
+    let registry = GameAssets::init_registry(
+        &mut images,
+        &mut mesh,
+        &mut materials,
+        &mut color_materials,
+        &mut audio,
+        &mut font,
+        &mut game_scenes,
+        &mut game_objects,
+    );
     commands.insert_resource(registry);
 
 
@@ -64,7 +83,7 @@ fn setup(mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
         mut images: ResMut<Assets<Image>>,
-         regestry: Res<ResourcesRegistry>,
+         registry: Res<ResourcesRegistry>,
 ) {
     commands.spawn((
         Camera3d::default(),
@@ -80,7 +99,7 @@ fn setup(mut commands: Commands,
     });
 
 
-    let texture_handle = regestry.image_handles.get("textures/rock.png").unwrap();
+    let texture_handle = registry.image.get("textures/rock.png").unwrap();
 
     let quad_handle = meshes.add(Rectangle::new(1.0, 1.0));
     let material_handle = materials.add(StandardMaterial {
@@ -95,6 +114,9 @@ fn setup(mut commands: Commands,
         MeshMaterial3d(material_handle),
         Transform::from_xyz(0.0, 0.0, 1.5)//.with_rotation(Quat::from_rotation_x(-PI / 5.0)),
     ));
+
+    debug_registry(registry);
+
 
 }
 

@@ -1,10 +1,12 @@
-use serde::Deserialize;
+use bevy::asset::Asset;
+use bevy::prelude::TypePath;
+use serde::{Deserialize, Serialize};
 
 use crate::components::position::{Position, Position2D};
 
 // docs/scense/SCENE.md
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Asset, TypePath)]
 pub struct GameScene {
     pub name: String,
     pub id: String,
@@ -20,7 +22,7 @@ pub struct SceneObject {
 }
 
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Asset, TypePath)]
 pub struct GameObject {
     pub id: String,
     pub assets: String,

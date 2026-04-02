@@ -26,6 +26,11 @@ Desktop:
 cargo run --bin game
 ```
 
+Debug
+```
+RUST_LOG=debug cargo run --bin game
+```
+
 **May have some problems**
 ```
 cargo build --target wasm32-unknown-unknown

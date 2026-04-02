@@ -1,0 +1,4 @@
+{
+  "material": "materials/3d/rock_material_3d.json",
+  "mesh": "mesh/Rock1.obj"
+}
