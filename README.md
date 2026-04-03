@@ -37,7 +37,18 @@ cargo build --target wasm32-unknown-unknown
 trunk serve
 ```
 
+for faster runtime `RUSTFLAGS='-C target-cpu=native'`
 
+```
+RUSTFLAGS='-C target-cpu=native' cargo build -r --target-dir build-release/
+```
+
+```
+cargo build --profile dev --target-dir build-dev/
+```
+
+
+Warning compile time can wary up to ~6-9 min depending on hardware
 
 
 Bevy insperation:
