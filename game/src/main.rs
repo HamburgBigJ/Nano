@@ -1,6 +1,6 @@
 mod player;
-mod assets;
 mod tests;
+mod world;
 
 use std::f32::consts::PI;
 use bevy::asset::AssetMetaCheck;
@@ -10,8 +10,14 @@ use bevy_egui::EguiPlugin;
 use rust_embed::Embed;
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
-use crate::assets::game_assets::{debug_registry, GameAssets, ResourcesRegistry};
+use common::assets::game_assets::{debug_registry, GameAssetPlugin, ResourcesRegistry};
 use crate::player::player_plugin::PlayerPlugin;
+use crate::world::level_render::LevelPlugin;
+
+
+#[derive(Embed)]
+#[folder = "assets/"]
+pub struct GameAssets;
 
 fn main() {
     #[cfg(target_arch = "wasm32")]
@@ -38,51 +44,20 @@ fn main() {
             })
         )
         .add_plugins(PlayerPlugin)
+        .add_plugins(LevelPlugin)
+
+        .add_plugins(GameAssetPlugin::<GameAssets>::default())
         .add_plugins(EguiPlugin::default())
 
         .add_systems(Startup, setup)
-        .add_systems(PreStartup, init_app)
-
-
-        .init_asset::<GameObject>()
-        .init_asset::<GameScene>()
 
         .run();
 }
 
-fn init_app(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-    mut mesh: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
-    mut audio: ResMut<Assets<AudioSource>>,
-    mut font: ResMut<Assets<Font>>,
-    mut game_scenes: ResMut<Assets<GameScene>>,
-    mut game_objects: ResMut<Assets<GameObject>>,
-) {
-
-    // Embeddeed asset regestry
-    let registry = GameAssets::init_registry(
-        &mut images,
-        &mut mesh,
-        &mut materials,
-        &mut color_materials,
-        &mut audio,
-        &mut font,
-        &mut game_scenes,
-        &mut game_objects,
-    );
-    commands.insert_resource(registry);
-
-
-}
 
 fn setup(mut commands: Commands,
-        asset_server: Res<AssetServer>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
-        mut images: ResMut<Assets<Image>>,
          registry: Res<ResourcesRegistry>,
 ) {
     commands.spawn((
@@ -90,13 +65,15 @@ fn setup(mut commands: Commands,
         Transform::from_xyz(0.0, 0.0, 8.0),
     ));
 
+    info!("Running: {} Version: {}", registry.game_config.name, registry.game_config.version);
 
+    //info!("{:?}", GameAssets::get_struct::<GameScene>("level/map_test.json"));
 
-    info!("{:?}", GameAssets::get_struct::<GameScene>("level/map_test.json"));
+    info!("{:?}", registry.game_config);
 
-    GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {
+    /*GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {
         info!("{:?}", o);
-    });
+    });*/
 
 
     let texture_handle = registry.image.get("textures/rock.png").unwrap();

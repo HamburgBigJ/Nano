@@ -1,12 +1,16 @@
+use std::marker::PhantomData;
+use bevy::app::{App, Plugin, PreStartup};
 use bevy::asset::{Asset, Assets, Handle, RenderAssetUsages};
 use bevy::audio::AudioSource;
 use bevy::camera::ImageRenderTarget;
+use bevy::ecs::system::SystemParam;
 use bevy::image::Image;
 use bevy::log::{debug, info};
 use bevy::math::Affine2;
 use bevy::mesh::Mesh;
 use bevy::pbr::StandardMaterial;
-use bevy::prelude::{Color, ColorMaterial, Commands, Res, ResMut, Resource};
+use bevy::prelude::{AssetApp, Color, ColorMaterial, Commands, Res, ResMut, Resource};
+use bevy::render::batching::sort_binned_render_phase;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite_render::AlphaMode2d;
 use bevy::text::Font;
@@ -14,13 +18,60 @@ use bevy::utils::default;
 use bevy_egui::egui::ahash::HashMap;
 use rust_embed::{Embed, EmbeddedFile};
 use serde::de::DeserializeOwned;
-use common::components::materials::MaterialConfig;
-use common::components::model::ModelConfig;
-use common::components::scene::{GameObject, GameScene};
+use crate::components::game::GameConfig;
+use crate::components::materials::MaterialConfig;
+use crate::components::model::ModelConfig;
+use crate::components::scene::{GameObject, GameScene};
 
-#[derive(Embed)]
-#[folder = "assets/"]
-pub struct GameAssets;
+
+
+// Ai insperation; i asked how i coud load the assets with this functions in the libary and how i coud mitigate the asset function in the app becasue it will beneedet in the edtir;
+// T isn' a fild in the struct and we need PahndomData<T> to store the generic
+// The main idea for there changes arte ot make the common lbary more acessabel for other project like the edtior and the asset system
+// We alsow need for the plguin the generic system with the stuct for the assets in the app
+pub struct GameAssetPlugin<T: EmbedHelper> {
+    _marker: PhantomData<T>,
+}
+
+impl<T: EmbedHelper> Default for GameAssetPlugin<T> {
+    fn default() -> GameAssetPlugin<T> {
+        Self { _marker: PhantomData }
+    }
+}
+
+
+impl<T: EmbedHelper + 'static + Send + Sync> Plugin for GameAssetPlugin<T> {
+    fn build(&self, app: &mut App) {
+        app.init_asset::<GameScene>();
+        app.init_asset::<GameObject>();
+
+
+        app.init_resource::<ResourcesRegistry>();
+        app.add_systems(PreStartup, init_app_generics::<T>);
+    }
+}
+
+
+fn init_app_generics<T: EmbedHelper>(
+    mut commands: Commands,
+    mut storages: AssetStorages
+) {
+    let registry = T::init_registry(&mut storages);
+    commands.insert_resource(registry);
+}
+
+// To get all assets without repeting yourself
+#[derive(SystemParam)]
+pub struct AssetStorages<'w> {
+    pub images: ResMut<'w, Assets<Image>>,
+    pub meshes: ResMut<'w, Assets<Mesh>>,
+    pub materials: ResMut<'w, Assets<StandardMaterial>>,
+    pub color_materials: ResMut<'w, Assets<ColorMaterial>>,
+    pub audio: ResMut<'w, Assets<AudioSource>>,
+    pub fonts: ResMut<'w, Assets<Font>>,
+    pub scenes: ResMut<'w, Assets<GameScene>>,
+    pub objects: ResMut<'w, Assets<GameObject>>,
+}
 
 #[derive(Resource, Default)]
 #[derive(Debug)]
@@ -37,6 +88,8 @@ pub struct ResourcesRegistry {
     pub scene: HashMap<String, Handle<GameScene>>,
     pub game_object: HashMap<String, Handle<GameObject>>,
     pub models: HashMap<String, ModelConfig>,
+
+    pub game_config: GameConfig,
 }
 pub fn debug_registry(registry: Res<ResourcesRegistry>) {
     info!("{:?}", *registry);
@@ -44,15 +97,14 @@ pub fn debug_registry(registry: Res<ResourcesRegistry>) {
 
 
 
-impl GameAssets {
-
-    pub fn get_struct<T>(path: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned { // Box needet for error / can not only contain std::error::Error
+pub trait EmbedHelper: Embed {
+    fn get_struct<T>(path: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned { // Box needet for error / can not only contain std::error::Error
         let asset = Self::get(path).ok_or_else(|| format!("asset not found: {}", path))?;
         let value = serde_json::from_slice::<T>(&asset.data)?;
         Ok(value)
     }
 
-    pub fn get_objects(path: &str) -> Result<Vec<GameObject>, Box<dyn std::error::Error>> {
+    fn get_objects(path: &str) -> Result<Vec<GameObject>, Box<dyn std::error::Error>> {
         let assets = Self::get_struct::<GameScene>(path)?;
         let mut scene_object = vec![];
         for entities in assets.entities {
@@ -61,7 +113,7 @@ impl GameAssets {
         Ok(scene_object)
     }
 
-    pub fn get_image_struct(path: &str) -> Result<Image, Box<dyn std::error::Error>> {
+    fn get_image_struct(path: &str) -> Result<Image, Box<dyn std::error::Error>> {
         let asset = Self::get(path).ok_or_else(|| format!("asset not found: {}", path))?;
         let dyn_img = image::load_from_memory(&asset.data)?.to_rgba8();
         let (width, height) = dyn_img.dimensions();
@@ -75,15 +127,8 @@ impl GameAssets {
         ))
     }
 
-    pub fn init_registry(
-        images: &mut Assets<Image>,
-        mesh: &mut Assets<Mesh>,
-        standard_materials: &mut Assets<StandardMaterial>,
-        color_materials: &mut Assets<ColorMaterial>,
-        audio: &mut Assets<AudioSource>,
-        font: &mut Assets<Font>,
-        game_scenes: &mut Assets<GameScene>,
-        game_objects: &mut Assets<GameObject>,
+    fn init_registry(
+        storages: &mut AssetStorages,
     ) -> ResourcesRegistry {
         let mut registry = ResourcesRegistry::default();
 
@@ -93,7 +138,7 @@ impl GameAssets {
             // Textures
             if path_str.ends_with(".png") || path_str.ends_with(".jpg") {
                 if let Ok(img) = Self::get_image_struct(path_str) {
-                    registry.image.insert(path_str.to_string(), images.add(img));
+                    registry.image.insert(path_str.to_string(), storages.images.add(img));
                 }
             }
 
@@ -101,7 +146,7 @@ impl GameAssets {
             else if path_str.ends_with(".ogg") || path_str.ends_with(".mp3") || path_str.ends_with(".wav") {
                 if let Some(asset) = Self::get(path_str) {
                     let source = AudioSource { bytes: asset.data.into() };
-                    registry.audio.insert(path_str.to_string(), audio.add(source));
+                    registry.audio.insert(path_str.to_string(), storages.audio.add(source));
                 }
             }
 
@@ -109,7 +154,7 @@ impl GameAssets {
             else if path_str.ends_with(".ttf") || path_str.ends_with(".otf") {
                 if let Some(asset) = Self::get(path_str) {
                     if let Ok(fon) = Font::try_from_bytes(asset.data.into()) {
-                        registry.font.insert(path_str.to_string(), font.add(fon));
+                        registry.font.insert(path_str.to_string(), storages.fonts.add(fon));
                     }
                 }
             }
@@ -117,14 +162,14 @@ impl GameAssets {
             // Game scene
             else if path_str.starts_with("level/") && path_str.ends_with(".json") {
                 if let Ok(level) = Self::get_struct::<GameScene>(path_str) {
-                    registry.scene.insert(path_str.to_string(), game_scenes.add(level));
+                    registry.scene.insert(path_str.to_string(), storages.scenes.add(level));
                 }
             }
 
             // Game object
             else if path_str.starts_with("objects/") && path_str.ends_with(".json") {
                 if let Ok(obj) = Self::get_struct::<GameObject>(path_str) {
-                    registry.game_object.insert(path_str.to_string(), game_objects.add(obj));
+                    registry.game_object.insert(path_str.to_string(), storages.objects.add(obj));
                 }
             }
 
@@ -149,7 +194,7 @@ impl GameAssets {
                         unlit: config.unlit,
                         ..Default::default()
                     };
-                    registry.standard_material.insert(path_str.to_string(), standard_materials.add(mat));
+                    registry.standard_material.insert(path_str.to_string(), storages.materials.add(mat));
                 }
             }
 
@@ -176,7 +221,7 @@ impl GameAssets {
                         texture: texture_handle,
                     };
 
-                    registry.color_materials.insert(path_str.to_string(), color_materials.add(mat));
+                    registry.color_materials.insert(path_str.to_string(), storages.color_materials.add(mat));
                 }
             }
 
@@ -187,10 +232,17 @@ impl GameAssets {
                 }
             }
 
-
+            if path_str.starts_with("game.json") {
+                if let Ok(game_config) = Self::get_struct::<GameConfig>(path_str) {
+                    registry.game_config = game_config;
+                }
+            }
 
 
         }
         registry
     }
 }
+
+
+impl<T: Embed> EmbedHelper for T {}

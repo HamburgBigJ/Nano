@@ -2,12 +2,14 @@ mod ui;
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-
+use rust_embed::Embed;
+use common::assets::game_assets::GameAssetPlugin;
 use crate::ui::editor_ui::EditorUi;
 
 
-
-
+#[derive(Embed)]
+#[folder = "assets/"]
+pub struct EditorAssets;
 
 
 
@@ -16,6 +18,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin::default())
         .add_plugins(EditorUi)
+        .add_plugins(GameAssetPlugin::<EditorAssets>::default())
 
         .add_systems(Startup, setup)
         .run();
