@@ -17,6 +17,7 @@ use crate::world::level_render::LevelPlugin;
 
 #[derive(Embed)]
 #[folder = "assets/"]
+#[exclude = "*.txt"]
 pub struct GameAssets;
 
 fn main() {

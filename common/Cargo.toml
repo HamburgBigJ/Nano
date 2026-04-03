@@ -8,5 +8,12 @@ bevy = { workspace = true }
 bevy_egui = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rust-embed = { workspace = true }
+rust-embed = { workspace = true , features = ["debug-embed", "include-exclude", "compression"]}
 image = { workspace = true }
+globset = { workspace = true }
+include-flate = { workspace = true }
+
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.7"
+wasm-bindgen = "0.2"
