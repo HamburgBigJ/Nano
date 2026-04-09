@@ -2985,11 +2985,7 @@ dependencies = [
  "bevy_egui",
  "common",
  "console_error_panic_hook",
- "globset",
- "image",
- "include-flate",
  "rust-embed",
- "serde",
  "serde_json",
  "wasm-bindgen",
 ]

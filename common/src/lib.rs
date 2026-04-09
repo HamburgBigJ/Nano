@@ -1,13 +1,13 @@
 use bevy::app::App;
 use bevy::prelude::Plugin;
-use rust_embed::Embed;
+use rust_embed::RustEmbed;
 use crate::assets::game_assets::GameAssetPlugin;
 
 pub mod components;
 pub mod assets;
 
 
-#[derive(Embed)]
+#[derive(RustEmbed)]
 #[folder = "assets/"]
 #[exclude = "*.txt"]
 pub struct CommonAssets;

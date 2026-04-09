@@ -2,12 +2,12 @@ mod ui;
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use rust_embed::Embed;
+use rust_embed::RustEmbed;
 use common::assets::game_assets::GameAssetPlugin;
 use crate::ui::editor_ui::EditorUi;
 
 
-#[derive(Embed)]
+#[derive(RustEmbed)]
 #[folder = "assets/"]
 pub struct EditorAssets;
 

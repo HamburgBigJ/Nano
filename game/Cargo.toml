@@ -7,12 +7,8 @@ edition = { workspace = true }
 common = { workspace = true }
 bevy = { workspace = true }
 bevy_egui = { workspace = true }
-serde = { workspace = true }
 serde_json = { workspace = true }
 rust-embed = { workspace = true , features = ["debug-embed", "include-exclude", "compression"]}
-image = { workspace = true }
-globset = { workspace = true }
-include-flate = { workspace = true }
 
 # only for the game editor excludet
 [target.'cfg(target_arch = "wasm32")'.dependencies]

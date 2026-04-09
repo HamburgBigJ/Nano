@@ -8,7 +8,7 @@ use bevy::ecs::error::{debug, info};
 use bevy::ecs::storage::Resources;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use rust_embed::Embed;
+use rust_embed::{Embed, RustEmbed};
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
 use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry};
@@ -18,7 +18,7 @@ use crate::player::player_plugin::PlayerPlugin;
 use crate::world::level_render::LevelPlugin;
 
 
-#[derive(Embed)]
+#[derive(RustEmbed)]
 #[folder = "assets/"]
 #[exclude = "*.txt"]
 pub struct GameAssets;
