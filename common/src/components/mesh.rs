@@ -3,8 +3,9 @@ use bevy::mesh::{Indices, Mesh, PrimitiveTopology};
 use bevy::prelude::{Cuboid, Plane3d, Rectangle, Sphere};
 use serde::{Deserialize, Serialize};
 
+// Ai notice needet help because MeshConfig with difrent style asked gemeai
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "object")] // This creates the "object": "Box" requirement
+#[serde(tag = "object")]
 pub enum MeshConfig {
     #[serde(rename = "Box")]
     Box { x: f32, y: f32, z: f32 },
