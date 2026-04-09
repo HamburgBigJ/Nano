@@ -1,15 +1,17 @@
+use std::io::Cursor;
 use std::marker::PhantomData;
 use bevy::app::{App, Plugin, PreStartup};
 use bevy::asset::{Asset, Assets, Handle, RenderAssetUsages};
 use bevy::audio::AudioSource;
 use bevy::camera::ImageRenderTarget;
+use bevy::ecs::storage::Resources;
 use bevy::ecs::system::SystemParam;
 use bevy::image::Image;
 use bevy::log::{debug, info};
 use bevy::math::Affine2;
-use bevy::mesh::Mesh;
-use bevy::pbr::StandardMaterial;
-use bevy::prelude::{AssetApp, Color, ColorMaterial, Commands, Res, ResMut, Resource};
+use bevy::mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
+use bevy::pbr::{MeshMaterial3d, StandardMaterial};
+use bevy::prelude::{AlphaMode, AssetApp, Color, ColorMaterial, Commands, Rectangle, Res, ResMut, Resource, Transform};
 use bevy::render::batching::sort_binned_render_phase;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite_render::AlphaMode2d;
@@ -18,8 +20,10 @@ use bevy::utils::default;
 use bevy_egui::egui::ahash::HashMap;
 use rust_embed::{Embed, EmbeddedFile};
 use serde::de::DeserializeOwned;
+use crate::assets;
 use crate::components::game::GameConfig;
 use crate::components::materials::MaterialConfig;
+use crate::components::mesh::MeshConfig;
 use crate::components::model::ModelConfig;
 use crate::components::scene::{GameObject, GameScene};
 
@@ -45,8 +49,10 @@ impl<T: EmbedHelper + 'static + Send + Sync> Plugin for GameAssetPlugin<T> {
         app.init_asset::<GameScene>();
         app.init_asset::<GameObject>();
 
-
-        app.init_resource::<ResourcesRegistry>();
+        // dubble regestry
+        if !app.world().contains_resource::<ResourcesRegistry>() {
+            app.init_resource::<ResourcesRegistry>();
+        }
         app.add_systems(PreStartup, init_app_generics::<T>);
     }
 }
@@ -54,10 +60,27 @@ impl<T: EmbedHelper + 'static + Send + Sync> Plugin for GameAssetPlugin<T> {
 
 fn init_app_generics<T: EmbedHelper>(
     mut commands: Commands,
-    mut storages: AssetStorages
+    mut storages: AssetStorages,
+    mut existing_registry: Option<ResMut<ResourcesRegistry>>,
 ) {
-    let registry = T::init_registry(&mut storages);
-    commands.insert_resource(registry);
+    let registry_data = T::init_registry(&mut storages);
+    if let Some(mut registry) = existing_registry {
+        registry.image.extend(registry_data.image);
+        registry.mesh.extend(registry_data.mesh);
+        registry.standard_material.extend(registry_data.standard_material);
+        registry.color_materials.extend(registry_data.color_materials);
+        registry.audio.extend(registry_data.audio);
+        registry.font.extend(registry_data.font);
+        registry.scene.extend(registry_data.scene);
+        registry.game_object.extend(registry_data.game_object);
+        registry.models.extend(registry_data.models);
+
+        if let Some(new_config) = registry_data.game_config {
+            registry.game_config = Some(new_config);
+        }
+    } else {
+        commands.insert_resource(registry_data);
+    }
 }
 
 // To get all assets without repeting yourself
@@ -72,6 +95,16 @@ pub struct AssetStorages<'w> {
     pub scenes: ResMut<'w, Assets<GameScene>>,
     pub objects: ResMut<'w, Assets<GameObject>>,
 }
+
+#[derive(SystemParam)]
+pub struct LevelSpawner<'w, 's> {
+    pub registry: Res<'w, ResourcesRegistry>,
+    pub commands: Commands<'w, 's>,
+    pub meshes: ResMut<'w, Assets<Mesh>>,
+    pub materials: ResMut<'w, Assets<StandardMaterial>>,
+    pub images: ResMut<'w, Assets<Image>>,
+}
+
 
 #[derive(Resource, Default)]
 #[derive(Debug)]
@@ -89,9 +122,9 @@ pub struct ResourcesRegistry {
     pub game_object: HashMap<String, Handle<GameObject>>,
     pub models: HashMap<String, ModelConfig>,
 
-    pub game_config: GameConfig,
+    pub game_config: Option<GameConfig>,
 }
-pub fn debug_registry(registry: Res<ResourcesRegistry>) {
+pub fn debug_registry(registry: &Res<ResourcesRegistry>) {
     info!("{:?}", *registry);
 }
 
@@ -130,7 +163,7 @@ pub trait EmbedHelper: Embed {
     fn init_registry(
         storages: &mut AssetStorages,
     ) -> ResourcesRegistry {
-        let mut registry = ResourcesRegistry::default();
+        let mut registry = ResourcesRegistry::default(); // TODO: maby procces insted of fodler defualt_box.mesh.json or so
 
         for file_path in Self::iter() { // hevy proccesng maby in ohter thred when window there
             let path_str = file_path.as_ref();
@@ -173,12 +206,21 @@ pub trait EmbedHelper: Embed {
                 }
             }
 
-            // byte to mesh not supportet
-            else if path_str.ends_with(".obj") { // maby .gltf
-                /* Let asset = Self::get(path_str).unwrap();
-                   // tobj::load_obj_buf to create bevy::Mesh
-                */
 
+            if path_str.starts_with("mesh/") {
+                if path_str.ends_with(".json") {
+                    if let Ok(config) = Self::get_struct::<MeshConfig>(path_str) {
+                        let mesh: Mesh = config.into();
+                        registry.mesh.insert(path_str.to_string(), storages.meshes.add(mesh));
+                    }
+                }
+                else if path_str.ends_with(".obj") {
+                    if let Some(asset) = Self::get(path_str) {
+                        if let Ok(mesh) = Self::load_obj_from_bytes(&asset.data) {
+                            registry.mesh.insert(path_str.to_string(), storages.meshes.add(mesh));
+                        }
+                    }
+                }
             }
 
             // Materials 3d
@@ -234,13 +276,79 @@ pub trait EmbedHelper: Embed {
 
             if path_str.starts_with("game.json") {
                 if let Ok(game_config) = Self::get_struct::<GameConfig>(path_str) {
-                    registry.game_config = game_config;
+                    registry.game_config = game_config.into();
                 }
             }
 
 
         }
         registry
+    }
+
+    // Ai notice help with ai to advanced mathematic themes with verteces and indecies
+    fn load_obj_from_bytes(bytes: &[u8]) -> Result<Mesh, Box<dyn std::error::Error>> {
+        let mut reader = Cursor::new(bytes);
+        let (models, _) = tobj::load_obj_buf(&mut reader, &tobj::LoadOptions {
+            single_index: true,
+            triangulate: true,
+            ..Default::default()
+        }, |_| Ok(Default::default()))?;
+
+        let mesh_data = &models[0].mesh;
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+
+        let positions: Vec<[f32; 3]> = mesh_data.positions.chunks(3)
+            .map(|c| [c[0], c[1], c[2]]).collect();
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+
+        if !mesh_data.normals.is_empty() {
+            let normals: Vec<[f32; 3]> = mesh_data.normals.chunks(3)
+                .map(|c| [c[0], c[1], c[2]]).collect();
+            mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        }
+
+        if !mesh_data.texcoords.is_empty() {
+            let uvs: Vec<[f32; 2]> = mesh_data.texcoords.chunks(2)
+                .map(|c| [c[0], c[1]]).collect();
+            mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        }
+
+        mesh.insert_indices(Indices::U32(mesh_data.indices.clone()));
+
+        Ok(mesh)
+    }
+
+    fn spawn_level(
+        spawner: &mut LevelSpawner,
+        path: &str,
+    ) {
+        let level = Self::get_struct::<GameScene>(path).unwrap();
+        let objects = Self::get_objects(path).unwrap();
+
+        for object in level.entities {
+            let level_object = Self::get_struct::<GameObject>(&object.file).unwrap();
+            info!("{}", &level_object.assets);
+            let texture_handle = spawner.registry.image.get(&level_object.assets).unwrap();
+
+            let quad_handle = spawner.meshes.add(Rectangle::new(level_object.scale.width, level_object.scale.height));
+            let material_handle = spawner.materials.add(StandardMaterial {
+                base_color_texture: Some(texture_handle.clone()),
+                alpha_mode: AlphaMode::Blend,
+                unlit: true,
+                ..default()
+            });
+
+            spawner.commands.spawn((
+                Mesh3d(quad_handle.clone()),
+                MeshMaterial3d(material_handle),
+                Transform::from_xyz(object.position.x, object.position.y, object.position.z)//.with_rotation(Quat::from_rotation_x(-PI / 5.0)),
+            ));
+
+        }
+
+        info!("spawned level {}", path);
+        info!("objects: {:?}", objects);
+
     }
 }
 

@@ -4,13 +4,16 @@ mod world;
 
 use std::f32::consts::PI;
 use bevy::asset::AssetMetaCheck;
-use bevy::ecs::error::info;
+use bevy::ecs::error::{debug, info};
+use bevy::ecs::storage::Resources;
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use rust_embed::Embed;
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
-use common::assets::game_assets::{debug_registry, GameAssetPlugin, ResourcesRegistry};
+use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry};
+use common::CommonGamePlugin;
+use common::assets::game_assets::EmbedHelper;
 use crate::player::player_plugin::PlayerPlugin;
 use crate::world::level_render::LevelPlugin;
 
@@ -49,6 +52,7 @@ fn main() {
 
         .add_plugins(GameAssetPlugin::<GameAssets>::default())
         .add_plugins(EguiPlugin::default())
+        .add_plugins(CommonGamePlugin)
 
         .add_systems(Startup, setup)
 
@@ -57,26 +61,25 @@ fn main() {
 
 
 fn setup(mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<StandardMaterial>>,
-         registry: Res<ResourcesRegistry>,
+         mut level_spawner: LevelSpawner,
+         resources: Res<ResourcesRegistry>,
 ) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0.0, 0.0, 8.0),
     ));
 
-    info!("Running: {} Version: {}", registry.game_config.name, registry.game_config.version);
+    debug_registry(&resources);
 
-    //info!("{:?}", GameAssets::get_struct::<GameScene>("level/map_test.json"));
 
-    info!("{:?}", registry.game_config);
+    GameAssets::spawn_level(&mut level_spawner, &resources.game_config.clone().unwrap().default_level);
 
     /*GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {
         info!("{:?}", o);
     });*/
 
 
+    /*
     let texture_handle = registry.image.get("textures/rock.png").unwrap();
 
     let quad_handle = meshes.add(Rectangle::new(1.0, 1.0));
@@ -93,7 +96,7 @@ fn setup(mut commands: Commands,
         Transform::from_xyz(0.0, 0.0, 1.5)//.with_rotation(Quat::from_rotation_x(-PI / 5.0)),
     ));
 
-    debug_registry(registry);
+     */
 
 
 }
