@@ -1,5 +1,8 @@
 # Nano
 
+
+Notis tehr is a limetid web wesion of this prject under the bracnh web-version. It is not the full game or engein i build but a part that is only for web and only for testing purposes or demo. The main project is going to go full desktip and dropp web build supprot ( main branch ) so interpelation with c or cpp can be achived or even moddin supprot with lua ( currently working on lua skirpng ) -> only possible on desktop because of mlua-sys or ohter dependecies. 
+
 ## Dependencys:
 
 for web:
