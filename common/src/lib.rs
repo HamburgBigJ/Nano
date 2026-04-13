@@ -1,5 +1,6 @@
 use bevy::app::App;
 use bevy::prelude::Plugin;
+use bevy_egui::EguiPlugin;
 use rust_embed::RustEmbed;
 use crate::assets::game_assets::GameAssetPlugin;
 

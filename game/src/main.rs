@@ -12,10 +12,9 @@ use rust_embed::{Embed, RustEmbed};
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
 use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry};
-use common::CommonGamePlugin;
+use common::{CommonAssets, CommonGamePlugin};
 use common::assets::game_assets::EmbedHelper;
 use crate::player::player_plugin::PlayerPlugin;
-use crate::world::level_render::LevelPlugin;
 
 
 #[derive(RustEmbed)]
@@ -41,14 +40,13 @@ fn main() {
                 },
 
             )
-            .set(AssetPlugin {
+            /*.set(AssetPlugin {
                 #[cfg(target_arch = "wasm32")]
                 meta_check: AssetMetaCheck::Never,
                 ..default()
-            })
+            })*/
         )
         .add_plugins(PlayerPlugin)
-        .add_plugins(LevelPlugin)
 
         .add_plugins(GameAssetPlugin::<GameAssets>::default())
         .add_plugins(EguiPlugin::default())
@@ -72,7 +70,9 @@ fn setup(mut commands: Commands,
     debug_registry(&resources);
 
 
-    GameAssets::spawn_level(&mut level_spawner, &resources.game_config.clone().unwrap().default_level);
+    //GameAssets::spawn_level(&mut level_spawner, &resources.game_config.clone().unwrap().default_level);
+    level_spawner.spawn("level/map_test.json");
+
 
     /*GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {
         info!("{:?}", o);

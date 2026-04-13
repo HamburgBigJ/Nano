@@ -49,6 +49,12 @@ cargo build --profile dev --target-dir build-dev/
 
 Warning compile time can wary up to ~6-9 min depending on hardware
 
+Around ~15-60 gb of storage are requierd to build
+
+The executable is around 1.4 gb in debug and in in relece mod 0.5 gb or so
+
+
+*****
 
 Bevy insperation:
 

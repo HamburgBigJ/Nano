@@ -11,7 +11,7 @@ use bevy::log::{debug, info};
 use bevy::math::Affine2;
 use bevy::mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
 use bevy::pbr::{MeshMaterial3d, StandardMaterial};
-use bevy::prelude::{AlphaMode, AssetApp, Color, ColorMaterial, Commands, Rectangle, Res, ResMut, Resource, Transform};
+use bevy::prelude::{AlphaMode, AssetApp, Color, ColorMaterial, Commands, Component, Entity, Rectangle, Res, ResMut, Resource, Transform};
 use bevy::render::batching::sort_binned_render_phase;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 use bevy::sprite_render::AlphaMode2d;
@@ -25,7 +25,7 @@ use crate::components::game::GameConfig;
 use crate::components::materials::MaterialConfig;
 use crate::components::mesh::MeshConfig;
 use crate::components::model::ModelConfig;
-use crate::components::scene::{GameObject, GameScene};
+use crate::components::scene::{GameObject, GameScene, SceneObject};
 
 
 
@@ -49,10 +49,13 @@ impl<T: EmbedHelper + 'static + Send + Sync> Plugin for GameAssetPlugin<T> {
         app.init_asset::<GameScene>();
         app.init_asset::<GameObject>();
 
+        app.init_resource::<LevelManager>();
+
         // dubble regestry
         if !app.world().contains_resource::<ResourcesRegistry>() {
             app.init_resource::<ResourcesRegistry>();
         }
+
         app.add_systems(PreStartup, init_app_generics::<T>);
     }
 }
@@ -96,13 +99,21 @@ pub struct AssetStorages<'w> {
     pub objects: ResMut<'w, Assets<GameObject>>,
 }
 
+#[derive(Resource, Default)]
+pub struct LevelManager {
+    pub current_level: Option<String>,
+    pub spawned_entities: HashMap<String, Vec<Entity>>,
+}
+
 #[derive(SystemParam)]
 pub struct LevelSpawner<'w, 's> {
-    pub registry: Res<'w, ResourcesRegistry>,
     pub commands: Commands<'w, 's>,
+    pub registry: Res<'w, ResourcesRegistry>,
+    pub manager: ResMut<'w, LevelManager>,
+    pub scene_assets: Res<'w, Assets<GameScene>>,
+    pub object_assets: Res<'w, Assets<GameObject>>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
-    pub images: ResMut<'w, Assets<Image>>,
 }
 
 
@@ -130,7 +141,64 @@ pub fn debug_registry(registry: &Res<ResourcesRegistry>) {
 
 
 
+impl<'w, 's> LevelSpawner<'w, 's> {
+    pub fn spawn(&mut self, level_path: &str) {
+        let scene_handle = self.registry.scene.get(level_path)
+            .expect("level not in registry");
+
+        let scene = self.scene_assets.get(scene_handle)
+            .expect("scene json not found");
+
+        let mut spawned = Vec::new();
+
+        for entity_ref in &scene.entities {
+            let obj_handle = self.registry.game_object.get(&entity_ref.file)
+                .expect("game obejct json not foud");
+
+            let obj_data = self.object_assets.get(obj_handle).unwrap();
+
+            let texture_handle = self.registry.image.get(&obj_data.assets)
+                .expect("Texture for object not found!");
+
+            let mesh_handle = self.meshes.add(Rectangle::new(obj_data.scale.width, obj_data.scale.height));
+            let mat_handle = self.materials.add(StandardMaterial {
+                base_color_texture: Some(texture_handle.clone()),
+                alpha_mode: AlphaMode::Blend,
+                unlit: true,
+                ..default()
+            });
+
+            let entity = self.commands.spawn((
+                Mesh3d(mesh_handle),
+                MeshMaterial3d(mat_handle),
+                Transform::from_xyz(entity_ref.position.x, entity_ref.position.y, entity_ref.position.z),
+                LevelEntity(level_path.to_string()),
+            )).id();
+
+            spawned.push(entity);
+        }
+
+        self.manager.current_level = Some(level_path.to_string());
+        self.manager.spawned_entities.insert(level_path.to_string(), spawned);
+    }
+
+    pub fn despawn_current(&mut self) {
+        if let Some(level) = self.manager.current_level.take() {
+            if let Some(entities) = self.manager.spawned_entities.remove(&level) {
+                for entity in entities {
+                    self.commands.entity(entity).despawn();
+                }
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct LevelEntity(pub String);
+
+
 pub trait EmbedHelper: Embed {
+
     fn get_struct<T>(path: &str) -> Result<T, Box<dyn std::error::Error>> where T: DeserializeOwned { // Box needet for error / can not only contain std::error::Error
         let asset = Self::get(path).ok_or_else(|| format!("asset not found: {}", path))?;
         let value = serde_json::from_slice::<T>(&asset.data)?;
@@ -318,6 +386,7 @@ pub trait EmbedHelper: Embed {
         Ok(mesh)
     }
 
+    #[deprecated(since = "0.0.1", note = "use LevelSpawner struct")]
     fn spawn_level(
         spawner: &mut LevelSpawner,
         path: &str,
