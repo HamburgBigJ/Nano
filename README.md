@@ -3,6 +3,28 @@
 
 Notis tehr is a limetid web wesion of this prject under the bracnh web-version. It is not the full game or engein i build but a part that is only for web and only for testing purposes or demo. The main project is going to go full desktip and dropp web build supprot ( main branch ) so interpelation with c or cpp can be achived or even moddin supprot with lua ( currently working on lua skirpng ) -> only possible on desktop because of mlua-sys or ohter dependecies. 
 
+for the web version:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Language              Files        Lines         Code     Comments       Blanks
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ JSON                      9           72           68            0            4
+ Rust                     26          812          585           61          166
+ TOML                      5           92           75            6           11
+─────────────────────────────────────────────────────────────────────────────────
+ HTML                      1           12           12            0            0
+ |- CSS                    1            2            2            0            0
+ (Total)                               14           14            0            0
+─────────────────────────────────────────────────────────────────────────────────
+ Markdown                 11          152            0           97           55
+ |- JSON                   1           39           39            0            0
+ (Total)                              191           39           97           55
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Total                    52         1181          781          164          236
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+
 ## Dependencys:
 
 for web:
