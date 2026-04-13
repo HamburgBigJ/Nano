@@ -14,6 +14,7 @@ use common::components::scene::{GameObject, GameScene};
 use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry};
 use common::{CommonAssets, CommonGamePlugin};
 use common::assets::game_assets::EmbedHelper;
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use crate::player::player_plugin::PlayerPlugin;
 
 
@@ -40,14 +41,20 @@ fn main() {
                 },
 
             )
-            /*.set(AssetPlugin {
+            .set(AssetPlugin {
                 #[cfg(target_arch = "wasm32")]
                 meta_check: AssetMetaCheck::Never,
+                file_path: "assetPlugin/assets".to_string(), // build my own because i nedded some other way to sotre assets and am just dum and forgot this exist and am too deep in the GameAssetPlugin so here we are
                 ..default()
-            })*/
+            })
         )
         .add_plugins(PlayerPlugin)
 
+        // for perfomace overlay and sutff
+        .add_plugins((
+            FrameTimeDiagnosticsPlugin::default(),
+            LogDiagnosticsPlugin::default()
+        ))
         .add_plugins(GameAssetPlugin::<GameAssets>::default())
         .add_plugins(EguiPlugin::default())
         .add_plugins(CommonGamePlugin)

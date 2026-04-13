@@ -28,46 +28,51 @@ for the web version:
 ## Dependencys:
 
 for web:
-```
+```shell
 cargo install wasm-server-runner
 cargo install --locked trunk
 ```
 maby:
-```
+```shell
 rustup target add wasm32-unknown-unknown
 ```
 
 
 ## Build / Run
 Editor:
-```
+```shell
 cargo run --bin editor
 ```
 
 Game:
 Desktop:
-```
+```shell
 cargo run --bin game
 ```
 
-Debug
+profiling:
+```shell
+cargo run --release --bin game --features bevy/trace_tracy
 ```
+
+Debug
+```shell
 RUST_LOG=debug cargo run --bin game
 ```
 
 **May have some problems**
-```
+```shell
 cargo build --target wasm32-unknown-unknown
 trunk serve
 ```
 
 for faster runtime `RUSTFLAGS='-C target-cpu=native'`
 
-```
+```shell
 RUSTFLAGS='-C target-cpu=native' cargo build -r --target-dir build-release/
 ```
 
-```
+```shell
 cargo build --profile dev --target-dir build-dev/
 ```
 
