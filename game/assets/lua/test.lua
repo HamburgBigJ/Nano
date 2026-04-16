@@ -1,5 +1,17 @@
+local Test = {}
 
-
-function Nano.onLoad()
+function Test.onStart()
     print("hello")
 end
+
+
+function Test.onStop()
+    print("hello")
+end
+
+
+function Test.onUpdate(dt)
+
+end
+
+Nano.registerModule("Test", Test)

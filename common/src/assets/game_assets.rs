@@ -150,21 +150,45 @@ pub fn debug_registry(registry: &Res<ResourcesRegistry>) {
 
 impl<'w> ScriptSystem<'w> {
 
-    pub fn init_lua(self: &Self) {
+    pub fn init_lua(&self) {
         let lua = get_lua().lock().unwrap();
-        lua.load(self.registry.scripts.get("src/nano.lua").unwrap().script.clone()).exec().unwrap();
+
+        if let Some(core_script) = self.registry.scripts.get("lua/lib/std/nano.lua") {
+            if let Err(e) = lua.load(&core_script.script).set_name("lua/lib/std/nano.lua").exec() {
+                eprintln!("Error Lua: {}", e);
+            }
+        } else {
+            eprintln!("lua/lib/std/nano.lua not found");
+            return;
+        }
+
+        for (path, script_data) in &self.registry.scripts {
+            if path == "lua/lib/std/nano.lua" {
+                continue;
+            }
+            if let Err(e) = lua.load(&script_data.script).set_name(path).exec() {
+                eprintln!("Script Error: {}: {}", path, e);
+            }
+        }
     }
 
-
-    pub fn execute_load_functions(self: &Self, path: &str) {
+    pub fn run_functions(&self, function_name: &str) {
         let lua = get_lua().lock().unwrap();
-        lua.load(self.registry.scripts.get(path).unwrap().script.clone()).exec(); // BROKEN !!!
-        println!("{}", self.registry.scripts.get(path).unwrap().script.clone());
-        let globals = lua.globals();
-        let nano_table: Table = globals.get("Nano").expect("Nano table");
-        let on_load_fn: Function = nano_table.get("onLoad").expect("onLoad");
-        let result: String = on_load_fn.call(()).expect("onLoad");
-        println!("{}", result);
+        let global_table = lua.globals();
+
+        if let Ok(nano_table) = global_table.get::<Table>("Nano") {
+            if let Ok(modules) = nano_table.get::<Table>("Modules") {
+                for pair in modules.pairs::<String, Table>() {
+                    if let Ok((module_name, module_table)) = pair {
+                        if let Ok(func) = module_table.get::<Function>(function_name) {
+                            if let Err(e) = func.call::<()>(()) {
+                                eprintln!("Error in {}.{}: {}", module_name, function_name, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

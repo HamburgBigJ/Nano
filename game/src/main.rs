@@ -80,8 +80,7 @@ fn setup(mut commands: Commands,
 
     //GameAssets::spawn_level(&mut level_spawner, &resources.game_config.clone().unwrap().default_level);
     level_spawner.spawn("level/map_test.json");
-    
-    script_system.execute_load_functions("lua/test.lua");
+
 
 
     /*GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {
