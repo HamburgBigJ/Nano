@@ -4,3 +4,4 @@ pub mod materials;
 pub mod model;
 pub mod game;
 pub mod mesh;
+pub mod lua_script;

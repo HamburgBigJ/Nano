@@ -11,7 +11,7 @@ use bevy_egui::EguiPlugin;
 use rust_embed::{Embed, RustEmbed};
 use serde_json::Value;
 use common::components::scene::{GameObject, GameScene};
-use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry};
+use common::assets::game_assets::{debug_registry, GameAssetPlugin, LevelSpawner, ResourcesRegistry, ScriptSystem};
 use common::{CommonAssets, CommonGamePlugin};
 use common::assets::game_assets::EmbedHelper;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
@@ -67,6 +67,7 @@ fn main() {
 
 fn setup(mut commands: Commands,
          mut level_spawner: LevelSpawner,
+         mut script_system: ScriptSystem,
          resources: Res<ResourcesRegistry>,
 ) {
     commands.spawn((
@@ -79,6 +80,8 @@ fn setup(mut commands: Commands,
 
     //GameAssets::spawn_level(&mut level_spawner, &resources.game_config.clone().unwrap().default_level);
     level_spawner.spawn("level/map_test.json");
+    
+    script_system.execute_load_functions("lua/test.lua");
 
 
     /*GameAssets::get_objects("level/map_test.json").iter().for_each(|o| {

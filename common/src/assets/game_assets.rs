@@ -18,16 +18,18 @@ use bevy::sprite_render::AlphaMode2d;
 use bevy::text::Font;
 use bevy::utils::default;
 use bevy_egui::egui::ahash::HashMap;
+use mlua::{Function, Lua, Table};
 use rust_embed::{Embed, EmbeddedFile};
 use serde::de::DeserializeOwned;
+use serde_json::Value::Null;
 use crate::assets;
 use crate::components::game::GameConfig;
+use crate::components::lua_script::LuaScript;
 use crate::components::materials::MaterialConfig;
 use crate::components::mesh::MeshConfig;
 use crate::components::model::ModelConfig;
 use crate::components::scene::{GameObject, GameScene, SceneObject};
-
-
+use crate::scritping::{get_lua};
 
 // Ai insperation; i asked how i coud load the assets with this functions in the libary and how i coud mitigate the asset function in the app becasue it will beneedet in the edtir;
 // T isn' a fild in the struct and we need PahndomData<T> to store the generic
@@ -77,6 +79,7 @@ fn init_app_generics<T: EmbedHelper>(
         registry.scene.extend(registry_data.scene);
         registry.game_object.extend(registry_data.game_object);
         registry.models.extend(registry_data.models);
+        registry.scripts.extend(registry_data.scripts);
 
         if let Some(new_config) = registry_data.game_config {
             registry.game_config = Some(new_config);
@@ -116,6 +119,11 @@ pub struct LevelSpawner<'w, 's> {
     pub materials: ResMut<'w, Assets<StandardMaterial>>,
 }
 
+#[derive(SystemParam)]
+pub struct ScriptSystem<'w> {
+    pub registry: Res<'w, ResourcesRegistry>,
+}
+
 
 #[derive(Resource, Default)]
 #[derive(Debug)]
@@ -132,6 +140,7 @@ pub struct ResourcesRegistry {
     pub scene: HashMap<String, Handle<GameScene>>,
     pub game_object: HashMap<String, Handle<GameObject>>,
     pub models: HashMap<String, ModelConfig>,
+    pub scripts: HashMap<String, LuaScript>,
 
     pub game_config: Option<GameConfig>,
 }
@@ -139,7 +148,25 @@ pub fn debug_registry(registry: &Res<ResourcesRegistry>) {
     info!("{:?}", *registry);
 }
 
+impl<'w> ScriptSystem<'w> {
 
+    pub fn init_lua(self: &Self) {
+        let lua = get_lua().lock().unwrap();
+        lua.load(self.registry.scripts.get("src/nano.lua").unwrap().script.clone()).exec().unwrap();
+    }
+
+
+    pub fn execute_load_functions(self: &Self, path: &str) {
+        let lua = get_lua().lock().unwrap();
+        lua.load(self.registry.scripts.get(path).unwrap().script.clone()).exec(); // BROKEN !!!
+        println!("{}", self.registry.scripts.get(path).unwrap().script.clone());
+        let globals = lua.globals();
+        let nano_table: Table = globals.get("Nano").expect("Nano table");
+        let on_load_fn: Function = nano_table.get("onLoad").expect("onLoad");
+        let result: String = on_load_fn.call(()).expect("onLoad");
+        println!("{}", result);
+    }
+}
 
 impl<'w, 's> LevelSpawner<'w, 's> {
     pub fn spawn(&mut self, level_path: &str) {
@@ -345,6 +372,17 @@ pub trait EmbedHelper: Embed {
             if path_str.starts_with("game.json") {
                 if let Ok(game_config) = Self::get_struct::<GameConfig>(path_str) {
                     registry.game_config = game_config.into();
+                }
+            }
+
+            // Scripts
+            if path_str.ends_with(".lua") {
+                if let Some(lua_script_data) = Self::get(path_str) {
+                    if let Ok(script) = std::str::from_utf8(&lua_script_data.data) {
+                        let mut lua = LuaScript::default();
+                        lua.script = script.to_string();
+                        registry.scripts.insert(path_str.to_string(), lua);
+                    }
                 }
             }
 
