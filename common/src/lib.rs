@@ -6,7 +6,7 @@ use crate::assets::game_assets::GameAssetPlugin;
 
 pub mod components;
 pub mod assets;
-
+mod scritping;
 
 #[derive(RustEmbed)]
 #[folder = "assets/"]

@@ -89,3 +89,6 @@ The executable is around 1.4 gb in debug and in in relece mod 0.5 gb or so
 Bevy insperation:
 
 https://bevy.org/examples/
+
+
+TODO: IMpment lua support wiht moonobehavor and envent or so or just one scirpnt suff like FUNCTONNAME.event();

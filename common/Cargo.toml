@@ -13,7 +13,7 @@ image = { workspace = true }
 globset = { workspace = true }
 include-flate = { workspace = true }
 tobj = { workspace = true }
-#mlua.workspace = true
+mlua.workspace = true
 
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
