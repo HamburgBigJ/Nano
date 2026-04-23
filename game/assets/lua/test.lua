@@ -7,6 +7,7 @@ end
 
 function Test.onStop()
     print("hello")
+    info("hello")
 end
 
 
