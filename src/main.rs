@@ -17,7 +17,7 @@ use crate::Elements::{Sand, Water};
 
 const W: u32 = 300;
 const H: u32 = 180;
-const SCALE: f32 = 4.0;
+const SCALE: f32 = 5.0;
 
 
 fn main() {
@@ -160,4 +160,10 @@ fn render_world(
             }
         }
     }
+}
+
+fn simulation(
+    mut world: ResMut<SandWorld>,
+) {
+
 }
