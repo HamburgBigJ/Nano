@@ -1,10 +1,10 @@
 
-use bevy::app::{App, Update};
+use bevy::app::{App, PluginGroup, Update};
 use bevy::asset::{Assets, Handle, RenderAssetUsages};
 use bevy::camera::Camera2d;
 use bevy::DefaultPlugins;
 use bevy::ecs::error::info;
-use bevy::image::Image;
+use bevy::image::{Image, ImagePlugin};
 use bevy::input::keyboard::Key::Camera;
 use bevy::log::info;
 use bevy::math::Vec3;
@@ -22,7 +22,7 @@ const SCALE: f32 = 4.0;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .insert_resource(SandWorld::new(W, H))
         .add_systems(Update, (
             render_world
@@ -46,11 +46,10 @@ enum Elements {
 impl Elements {
     pub fn color(&self) -> [f32; 4] {
         match self {
-            Elements::Sand => [0.1, 0.2, 0.3, 1.0], // colors need to be ajusted
-            Elements::Stone => [0.1, 0.2, 0.3, 1.0],
-            Elements::Water => [0.1, 0.2, 0.3, 1.0],
-
-            Elements::Empty => [0.0, 0.0, 0.0, 0.0],
+            Elements::Sand  => [1.0, 0.8, 0.2, 1.0], // Yellow
+            Elements::Stone => [0.5, 0.5, 0.5, 1.0], // Gray
+            Elements::Water => [0.2, 0.4, 1.0, 1.0], // Blue
+            Elements::Empty => [0.0, 0.0, 0.0, 0.0], // Transparent
         }
     }
 }
@@ -124,10 +123,13 @@ fn setup(
 
     let mut world = SandWorld::new(W, H);
     world.set_cell(130, 130, Elements::Sand);
-    world.cells.iter().for_each(|cell| {
-        info!("{:?}", cell);
+    world.cells.iter().enumerate().for_each(|(i, cell)| {
+        if *cell != Elements::Empty {
+            let x = i as u32 % W;
+            let y = i as u32 / W;
+            info!("Found {:?} at ({}, {})", cell, x, y);
+        }
     });
-
     commands.insert_resource(world);
     commands.insert_resource(PixelTexture { handle });
 
@@ -141,7 +143,6 @@ fn render_world(
     texture: Res<PixelTexture>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    info!("test");
     let Some(image) = images.get_mut(&texture.handle) else { return };
     let data = &mut image.data.as_mut().unwrap();
 
