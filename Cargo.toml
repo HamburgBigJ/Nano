@@ -1,32 +1,7 @@
-[workspace]
-resolver = "3"
-members = [
-    "common", 
-    "editor",
-    "game"
-]
-
-[workspace.package]
+[package]
+name = "Game"
 version = "0.1.0"
 edition = "2024"
-authors = ["HamburgBigJ"]
 
-[workspace.dependencies]
+[dependencies]
 bevy = "0.18.1"
-bevy_egui = "0.39.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4.65"
-rust-embed = { version = "8.11.0", features = ["debug-embed", "include-exclude", "compression"] }
-image = "0.25.10"
-globset = { version = "0.4.18"}
-include-flate = "0.3.2"
-tobj = "4.0.3"
-mlua = { version = "0.11", features = ["lua55", "vendored", "send"] }
-common = { path = "common" }
-
-[profile.release]
-lto = true
-opt-level = 's'
-codegen-units = 1

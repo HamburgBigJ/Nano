@@ -1,7 +1,0 @@
-{
-  "base_color": [1.0, 1.0, 1.0, 1.0],
-  "texture_path": "textures/Rock-Texture-Surace.png",
-  "unlit": true,
-  "roughness": 0.5,
-  "metallic": 0.0
-}

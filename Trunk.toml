@@ -1,8 +1,0 @@
-[build]
-target = "game/index.html"
-
-[[bin]]
-name = "game"
-
-# Assets included in binary
-# Path may be incorect

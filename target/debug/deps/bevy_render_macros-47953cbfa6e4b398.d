@@ -1,0 +1,9 @@
+/Users/jonas/Projects/Nano/target/debug/deps/bevy_render_macros-47953cbfa6e4b398.d: /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/lib.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/as_bind_group.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_component.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_resource.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/specializer.rs
+
+/Users/jonas/Projects/Nano/target/debug/deps/libbevy_render_macros-47953cbfa6e4b398.dylib: /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/lib.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/as_bind_group.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_component.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_resource.rs /Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/specializer.rs
+
+/Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/lib.rs:
+/Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/as_bind_group.rs:
+/Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_component.rs:
+/Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/extract_resource.rs:
+/Users/jonas/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bevy_render_macros-0.18.1/src/specializer.rs:
