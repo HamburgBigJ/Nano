@@ -2,6 +2,7 @@ mod elements;
 mod render;
 mod script;
 mod world;
+mod input;
 
 use crate::elements::elements::ElementsPlugin;
 use crate::render::WorldRenderPlugin;
