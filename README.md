@@ -24,3 +24,4 @@ trunk serve
 ## Ai notice
 
 Teile von dem js und mod loading sind mit ai generirt ( claude )
+Documatioan für mods wie auch nano-api.ts für autocompleet is ai generirt

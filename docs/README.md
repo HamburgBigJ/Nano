@@ -11,6 +11,9 @@ Put external mod files in this directory:
 mods/
 ```
 
+The file `mods/nano-api.d.ts` is an editor autocomplete header for the Nano
+JavaScript API. It is not loaded by the game.
+
 Every `*.js` file in this directory is loaded at runtime on native desktop
 builds. Files are loaded in sorted filename order after the embedded scripts and
 embedded mods.

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "target": "ES2020"
+  },
+  "include": [
+    "mods/**/*.js",
+    "mods/**/*.d.ts",
+    "assets/mods/**/*.js",
+    "assets/scripts/**/*.js"
+  ]
+}
