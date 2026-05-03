@@ -25,3 +25,9 @@ trunk serve
 
 Teile von dem js und mod loading sind mit ai generirt ( claude )
 Documatioan für mods wie auch nano-api.ts für autocompleet is ai generirt
+
+
+# TODO
+
+mod list with json to enable / disable mods
+mods not loading in the same directory as nano
