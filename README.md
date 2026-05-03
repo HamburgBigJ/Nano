@@ -19,3 +19,8 @@ Run:
 cargo build --target wasm32-unknown-unknown
 trunk serve
 ```
+
+
+## Ai notice
+
+Teile von dem js und mod loading sind mit ai generirt ( claude )
