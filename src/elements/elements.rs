@@ -34,28 +34,16 @@ pub fn register_defaults(
         behavior: BehaviorScript::None,
     };
 
-    elements.register(empty);
-    let sand_id = elements.register(sand);
-
     let fire = Element {
         name: "Fire".to_string(),
         color: [1.0, 0.3, 0.0, 1.0],
         kind: ElementKind::Gas,
         behavior: BehaviorScript::JavaScript("fireBehavior".to_string()),
     };
-    let fire_id = elements.register(fire);
 
-    for x in 140..160 {
-        for y in 40..60 {
-            world.set_cell(x, y, sand_id);
-        }
-    }
-
-    for x in 145..155 {
-        for y in 30..35 {
-            world.set_cell(x, y, fire_id);
-        }
-    }
+    elements.register(empty);
+    elements.register(sand);
+    elements.register(fire);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
