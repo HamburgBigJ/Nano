@@ -31,3 +31,5 @@ Documatioan für mods wie auch nano-api.ts für autocompleet is ai generirt
 
 mod list with json to enable / disable mods
 mods not loading in the same directory as nano
+
+Sand auf wasser fallen not implemented
