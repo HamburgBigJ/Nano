@@ -10,6 +10,14 @@ function waterBehavior(x, y, surrounding) {
     } else if (World.isEmpty(x - dir, y)) {
         World.swap(x, y, x - dir, y);
     }
+
+    for (let i = 0; i < surrounding.length; i++) {
+        let cell = surrounding[i];
+        if (cell && cell.name === "Fire") {
+           World.swap(x, y, cell.x, cell.y);
+           World.setCell(x, y, Nano.getElementIdByName("Empty"))
+        }
+    }
 }
 
 function explosiveBehavior(x, y, surrounding) {
@@ -43,11 +51,5 @@ Nano.registerElement({
     kind: "Powder",
     behavior: "explosiveBehavior"
 });
-
-for (let i = 0; i < 10; i++) {
-    World.setCell(100, (100 + i), 3);
-    World.setCell(50, (100 + i), 4);
-    print("test");
-}
 
 print("mod loaded");

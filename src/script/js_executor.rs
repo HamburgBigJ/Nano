@@ -8,18 +8,20 @@ use boa_engine::{
 };
 use std::cell::RefCell;
 use std::collections::HashMap;
+use bevy::log::error;
+use bevy::prelude::info;
 
 thread_local! {
-    static js_context: RefCell<Option<Context>> = RefCell::new(None);
-    static current_registry: RefCell<Option<*mut ElementRegistry>> = RefCell::new(None);
+    static JS_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+    static CURRENT_REGISTRY: RefCell<Option<*mut ElementRegistry>> = RefCell::new(None);
     static BEHAVIOR_FUNCTIONS: RefCell<HashMap<String, JsObject>> = RefCell::new(HashMap::new());
 }
 
-pub struct js_executor;
+pub struct JsExecutor;
 
-impl js_executor {
+impl JsExecutor {
     pub fn initialize() {
-        js_context.with(|ctx| {
+        JS_CONTEXT.with(|ctx| {
             let mut context = Context::default();
             Self::setup_api(&mut context);
             *ctx.borrow_mut() = Some(context);
@@ -105,10 +107,10 @@ impl js_executor {
         world: &mut SandWorld,
         registry: &ElementRegistry,
     ) {
-        current_world.with(|w| *w.borrow_mut() = Some(world as *mut SandWorld));
-        current_registry_const.with(|r| *r.borrow_mut() = Some(registry as *const ElementRegistry));
+        CURRENT_WORLD.with(|w| *w.borrow_mut() = Some(world as *mut SandWorld));
+        CURRENT_REGISTRY_CONST.with(|r| *r.borrow_mut() = Some(registry as *const ElementRegistry));
 
-        js_context.with(|ctx| {
+        JS_CONTEXT.with(|ctx| {
             if let Some(context) = ctx.borrow_mut().as_mut() {
                 let surrounding = Self::get_surrounding_info(x, y, world, registry, context);
 
@@ -116,19 +118,19 @@ impl js_executor {
                     Ok(Some(function)) => {
                         let args = [JsValue::from(x), JsValue::from(y), surrounding];
                         if let Err(e) = function.call(&JsValue::undefined(), &args, context) {
-                            eprintln!("JS behavior error in {}: {}", function_name, e);
+                            error!("JS behavior error in {}: {}", function_name, e);
                         }
                     }
                     Ok(None) => {}
                     Err(e) => {
-                        eprintln!("JS behavior error in {}: {}", function_name, e);
+                        error!("JS behavior error in {}: {}", function_name, e);
                     }
                 }
             }
         });
 
-        current_world.with(|w| *w.borrow_mut() = None);
-        current_registry_const.with(|r| *r.borrow_mut() = None);
+        CURRENT_WORLD.with(|w| *w.borrow_mut() = None);
+        CURRENT_REGISTRY_CONST.with(|r| *r.borrow_mut() = None);
     }
 
     fn get_surrounding_info(
@@ -238,16 +240,16 @@ impl js_executor {
         world: Option<&mut SandWorld>,
     ) -> Result<String, String> {
         BEHAVIOR_FUNCTIONS.with(|cache| cache.borrow_mut().clear());
-        current_registry.with(|r| *r.borrow_mut() = Some(registry as *mut ElementRegistry));
-        current_registry_const.with(|r| {
+        CURRENT_REGISTRY.with(|r| *r.borrow_mut() = Some(registry as *mut ElementRegistry));
+        CURRENT_REGISTRY_CONST.with(|r| {
             *r.borrow_mut() = Some(registry as *const ElementRegistry);
         });
 
         if let Some(world) = world {
-            current_world.with(|w| *w.borrow_mut() = Some(world as *mut SandWorld));
+            CURRENT_WORLD.with(|w| *w.borrow_mut() = Some(world as *mut SandWorld));
         }
 
-        js_context.with(|ctx| {
+        JS_CONTEXT.with(|ctx| {
             if let Some(context) = ctx.borrow_mut().as_mut() {
                 context
                     .eval(Source::from_bytes(code))
@@ -258,9 +260,9 @@ impl js_executor {
             }
         })?;
 
-        current_registry.with(|r| *r.borrow_mut() = None);
-        current_registry_const.with(|r| *r.borrow_mut() = None);
-        current_world.with(|w| *w.borrow_mut() = None);
+        CURRENT_REGISTRY.with(|r| *r.borrow_mut() = None);
+        CURRENT_REGISTRY_CONST.with(|r| *r.borrow_mut() = None);
+        CURRENT_WORLD.with(|w| *w.borrow_mut() = None);
         Ok("OK".to_string())
     }
 
@@ -334,12 +336,12 @@ impl js_executor {
         };
 
         let mut registered_id = None;
-        current_registry.with(|r| {
+        CURRENT_REGISTRY.with(|r| {
             if let Some(registry_ptr) = *r.borrow() {
                 let registry = unsafe { &mut *registry_ptr };
                 let id = registry.register(element);
                 registered_id = Some(id);
-                println!("Registered element '{}' with id {}", name, id);
+                info!("Registered element '{}' with id {}", name, id);
             }
         });
 
@@ -353,7 +355,7 @@ impl js_executor {
             return Ok(JsValue::from(0));
         };
 
-        current_world.with(|w| {
+        CURRENT_WORLD.with(|w| {
             if let Some(world_ptr) = *w.borrow() {
                 let world = unsafe { &*world_ptr };
                 Ok(JsValue::from(world.get_cell(x, y)))
@@ -369,7 +371,7 @@ impl js_executor {
         };
         let id = args.get(2).and_then(|v| v.as_number()).unwrap_or(0.0) as u8;
 
-        current_world.with(|w| {
+        CURRENT_WORLD.with(|w| {
             if let Some(world_ptr) = *w.borrow() {
                 let world = unsafe { &mut *world_ptr };
                 world.set_cell(x, y, id);
@@ -384,7 +386,7 @@ impl js_executor {
             return Ok(JsValue::from(false));
         };
 
-        current_world.with(|w| {
+        CURRENT_WORLD.with(|w| {
             if let Some(world_ptr) = *w.borrow() {
                 let world = unsafe { &*world_ptr };
                 Ok(JsValue::from(world.is_empty(x, y)))
@@ -402,7 +404,7 @@ impl js_executor {
             return Ok(JsValue::undefined());
         };
 
-        current_world.with(|w| {
+        CURRENT_WORLD.with(|w| {
             if let Some(world_ptr) = *w.borrow() {
                 let world = unsafe { &mut *world_ptr };
                 world.swap_cells(x1, y1, x2, y2);
@@ -434,7 +436,7 @@ impl js_executor {
     ) -> JsResult<JsValue> {
         let id = args.get(0).and_then(|v| v.as_number()).unwrap_or(0.0) as u8;
 
-        current_registry_const.with(|r| {
+        CURRENT_REGISTRY_CONST.with(|r| {
             if let Some(registry_ptr) = *r.borrow() {
                 let registry = unsafe { &*registry_ptr };
                 let name = registry
@@ -456,7 +458,7 @@ impl js_executor {
     ) -> JsResult<JsValue> {
         let id = args.get(0).and_then(|v| v.as_number()).unwrap_or(0.0) as u8;
 
-        current_registry_const.with(|r| {
+        CURRENT_REGISTRY_CONST.with(|r| {
             if let Some(registry_ptr) = *r.borrow() {
                 let registry = unsafe { &*registry_ptr };
                 let kind = registry
@@ -482,7 +484,7 @@ impl js_executor {
             .map(|s| s.to_std_string_escaped())
             .unwrap_or_default();
 
-        current_registry_const.with(|r| {
+        CURRENT_REGISTRY_CONST.with(|r| {
             if let Some(registry_ptr) = *r.borrow() {
                 let registry = unsafe { &*registry_ptr };
                 let id = registry
@@ -504,12 +506,12 @@ impl js_executor {
             .and_then(|v| v.as_string())
             .map(|s| s.to_std_string_escaped())
             .unwrap_or_default();
-        println!("[JS] {}", msg);
+        info!("[JS] {}", msg);
         Ok(JsValue::undefined())
     }
 }
 
 thread_local! {
-    static current_world: RefCell<Option<*mut SandWorld>> = RefCell::new(None);
-    static current_registry_const: RefCell<Option<*const ElementRegistry>> = RefCell::new(None);
+    static CURRENT_WORLD: RefCell<Option<*mut SandWorld>> = RefCell::new(None);
+    static CURRENT_REGISTRY_CONST: RefCell<Option<*const ElementRegistry>> = RefCell::new(None);
 }

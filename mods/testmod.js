@@ -8,7 +8,6 @@ const testElement = Nano.registerElement({
 })
 
 function test_behavior(x, y, surrounding) {
-
 }
 
 

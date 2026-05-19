@@ -13,12 +13,12 @@ impl Plugin for ElementsPlugin {
     }
 }
 
-fn register_defaults(
+pub fn register_defaults(
     mut elements: ResMut<ElementRegistry>,
     mut world: ResMut<SandWorld>,
     _main_thread: NonSendMarker,
 ) {
-    crate::script::js_executor::js_executor::initialize();
+    crate::script::js_executor::JsExecutor::initialize();
 
     let empty = Element {
         name: "Empty".to_string(),

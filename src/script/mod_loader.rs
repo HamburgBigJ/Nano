@@ -8,7 +8,7 @@ use bevy::asset::{
     io::Reader, load_embedded_asset,
 };
 use bevy::ecs::system::NonSendMarker;
-use bevy::prelude::{Asset, Res, ResMut, Resource};
+use bevy::prelude::{error, info, Asset, Res, ResMut, Resource};
 use bevy::reflect::TypePath;
 #[cfg(not(target_arch = "wasm32"))]
 use std::fs;
@@ -28,6 +28,7 @@ impl Plugin for ModLoaderPlugin {
         app.init_asset::<JsAsset>()
             .register_asset_loader(JsAssetLoader)
             .init_resource::<JsLoadQueue>()
+            .init_resource::<ModsLoaded>()
             .add_systems(Startup, queue_embedded_js)
             .add_systems(Update, load_queued_js);
     }
@@ -70,6 +71,11 @@ struct JsLoadQueue {
     loaded: bool,
 }
 
+#[derive(Resource, Default)]
+pub struct ModsLoaded {
+    pub loaded: bool,
+}
+
 struct QueuedEmbeddedJs {
     label: &'static str,
     kind: JsKind,
@@ -99,6 +105,7 @@ fn queue_embedded_js(mut queue: ResMut<JsLoadQueue>, asset_server: Res<AssetServ
 
 fn load_queued_js(
     mut queue: ResMut<JsLoadQueue>,
+    mut mods_loaded: ResMut<ModsLoaded>,
     loaded_js: Res<Assets<JsAsset>>,
     asset_server: Res<AssetServer>,
     mut registry: ResMut<ElementRegistry>,
@@ -114,8 +121,9 @@ fn load_queued_js(
             asset_server.get_load_state(&item.handle),
             Some(LoadState::Failed(_))
         ) {
-            eprintln!("Failed to load embedded JS asset: {}", item.label);
+            error!("Failed to load embedded JS asset: {}", item.label);
             queue.loaded = true;
+            mods_loaded.loaded = true;
             return;
         }
 
@@ -136,23 +144,24 @@ fn load_queued_js(
             item.label,
             &script.source,
         ) {
-            eprintln!("Error loading embedded JS asset '{}': {}", item.label, e);
+            error!("Error loading embedded JS asset '{}': {}", item.label, e);
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     {
         if let Err(e) = load_external_mods(&mut registry, &mut world, Path::new(EXTERNAL_MOD_DIR)) {
-            eprintln!("Error loading external mods: {}", e);
+            error!("Error loading external mods: {}", e);
         }
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        println!("External mods are not available on wasm; using embedded JS only");
+        error!("External mods are not available on wasm; using embedded JS only");
     }
 
     queue.loaded = true;
+    mods_loaded.loaded = true;
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -164,7 +173,7 @@ fn load_external_mods(
     let entries = match fs::read_dir(mod_dir) {
         Ok(entries) => entries,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            println!(
+            info!(
                 "External mod directory not found, skipping: {}",
                 mod_dir.display()
             );
@@ -216,15 +225,15 @@ fn execute_js_source(
     label: &str,
     source: &str,
 ) -> Result<(), String> {
-    crate::script::js_executor::js_executor::register_function_with_world(
+    crate::script::js_executor::JsExecutor::register_function_with_world(
         source,
         registry,
         Some(world),
     )?;
 
     match kind {
-        JsKind::Script => println!("Loaded embedded script: {}", label),
-        JsKind::Mod => println!("Loaded mod: {}", label),
+        JsKind::Script => info!("Loaded embedded script: {}", label),
+        JsKind::Mod => info!("Loaded mod: {}", label),
     }
 
     Ok(())

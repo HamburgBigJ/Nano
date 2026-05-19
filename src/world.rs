@@ -1,4 +1,4 @@
-use crate::elements::elements::{BehaviorScript, Element, ElementKind, ElementRegistry};
+use crate::elements::elements::{BehaviorScript, ElementKind, ElementRegistry};
 use bevy::app::{Plugin, Update};
 use bevy::ecs::system::NonSendMarker;
 use bevy::prelude::{Res, ResMut, Resource};
@@ -16,16 +16,23 @@ pub struct SandWorld {
     pub width: u32,
     pub height: u32,
     pub cells: Vec<u8>,
-    pub updated: Vec<bool>,
+    updated_frame: Vec<u32>,
+    frame: u32,
+    dirty: Vec<bool>,
+    dirty_cells: Vec<usize>,
 }
 
 impl SandWorld {
     pub fn new(width: u32, height: u32) -> Self {
+        let len = (width * height) as usize;
         Self {
             width,
             height,
-            cells: vec![0; (width * height) as usize],
-            updated: vec![false; (width * height) as usize],
+            cells: vec![0; len],
+            updated_frame: vec![0; len],
+            frame: 0,
+            dirty: vec![false; len],
+            dirty_cells: Vec::new(),
         }
     }
 
@@ -37,8 +44,11 @@ impl SandWorld {
 
     pub fn set_cell(&mut self, x: u32, y: u32, id: u8) {
         if let Some(idx) = self.cell_index(x, y) {
-            self.cells[idx] = id;
-            self.updated[idx] = true;
+            self.mark_updated(idx);
+            if self.cells[idx] != id {
+                self.cells[idx] = id;
+                self.mark_dirty(idx);
+            }
         }
     }
 
@@ -50,13 +60,55 @@ impl SandWorld {
             return;
         };
 
-        self.cells.swap(idx1, idx2);
-        self.updated[idx1] = true;
-        self.updated[idx2] = true;
+        self.swap_indices(idx1, idx2);
     }
 
     pub fn is_empty(&self, x: u32, y: u32) -> bool {
         self.get_cell(x, y) == 0
+    }
+
+    pub fn dirty_cells(&self) -> &[usize] {
+        &self.dirty_cells
+    }
+
+    pub fn clear_dirty(&mut self) {
+        for idx in self.dirty_cells.drain(..) {
+            self.dirty[idx] = false;
+        }
+    }
+
+    fn begin_simulation_frame(&mut self) {
+        self.frame = self.frame.wrapping_add(1);
+        if self.frame == 0 {
+            self.updated_frame.fill(0);
+            self.frame = 1;
+        }
+    }
+
+    fn is_updated(&self, idx: usize) -> bool {
+        self.updated_frame[idx] == self.frame
+    }
+
+    fn mark_updated(&mut self, idx: usize) {
+        self.updated_frame[idx] = self.frame;
+    }
+
+    fn mark_dirty(&mut self, idx: usize) {
+        if !self.dirty[idx] {
+            self.dirty[idx] = true;
+            self.dirty_cells.push(idx);
+        }
+    }
+
+    fn swap_indices(&mut self, idx1: usize, idx2: usize) {
+        self.cells.swap(idx1, idx2);
+        self.mark_updated(idx1);
+        self.mark_updated(idx2);
+
+        if idx1 != idx2 {
+            self.mark_dirty(idx1);
+            self.mark_dirty(idx2);
+        }
     }
 
     fn cell_index(&self, x: u32, y: u32) -> Option<usize> {
@@ -73,16 +125,20 @@ pub fn simulation_system(
     registry: Res<ElementRegistry>,
     _main_thread: NonSendMarker,
 ) {
-    world.updated.fill(false);
+    world.begin_simulation_frame();
+    let width = world.width as usize;
 
     for y in (0..world.height).rev() {
         for x in 0..world.width {
-            let id = world.get_cell(x, y);
-            if id == 0 || world.updated[(y * world.width + x) as usize] {
+            let idx = y as usize * width + x as usize;
+            let id = world.cells[idx];
+            if id == 0 || world.is_updated(idx) {
                 continue;
             }
 
-            let element = &registry.elements[id as usize];
+            let Some(element) = registry.elements.get(id as usize) else {
+                continue;
+            };
 
             match element.kind {
                 ElementKind::Powder => update_powder(x, y, &mut world),
@@ -95,7 +151,7 @@ pub fn simulation_system(
                     func(x, y, &mut world);
                 }
                 BehaviorScript::JavaScript(func_name) => {
-                    crate::script::js_executor::js_executor::execute_behavior(
+                    crate::script::js_executor::JsExecutor::execute_behavior(
                         func_name, x, y, &mut world, &registry,
                     );
                 }
@@ -106,25 +162,41 @@ pub fn simulation_system(
 }
 
 fn update_powder(x: u32, y: u32, world: &mut SandWorld) {
-    if y + 1 < world.height {
-        if world.is_empty(x, y + 1) {
-            world.swap_cells(x, y, x, y + 1);
-        } else if x > 0 && world.is_empty(x - 1, y + 1) {
-            world.swap_cells(x, y, x - 1, y + 1);
-        } else if x + 1 < world.width && world.is_empty(x + 1, y + 1) {
-            world.swap_cells(x, y, x + 1, y + 1);
-        }
+    if y + 1 >= world.height {
+        return;
+    }
+
+    let width = world.width as usize;
+    let idx = y as usize * width + x as usize;
+    let below = idx + width;
+
+    if world.cells[below] == 0 {
+        world.swap_indices(idx, below);
+    } else if x > 0 && world.cells[below - 1] == 0 {
+        world.swap_indices(idx, below - 1);
+    } else if x + 1 < world.width && world.cells[below + 1] == 0 {
+        world.swap_indices(idx, below + 1);
     }
 }
 
 fn update_liquid(x: u32, y: u32, world: &mut SandWorld) {
-    if y + 1 < world.height && world.is_empty(x, y + 1) {
-        world.swap_cells(x, y, x, y + 1);
-    } else {
-        let dir = if x % 2 == 0 { 1 } else { -1 };
-        let target_x = x as i32 + dir;
-        if target_x >= 0 && target_x < world.width as i32 && world.is_empty(target_x as u32, y) {
-            world.swap_cells(x, y, target_x as u32, y);
+    let width = world.width as usize;
+    let idx = y as usize * width + x as usize;
+
+    if y + 1 < world.height {
+        let below = idx + width;
+        if world.cells[below] == 0 {
+            world.swap_indices(idx, below);
+            return;
+        }
+    }
+
+    let dir = if x % 2 == 0 { 1 } else { -1 };
+    let target_x = x as i32 + dir;
+    if target_x >= 0 && target_x < world.width as i32 {
+        let target_idx = y as usize * width + target_x as usize;
+        if world.cells[target_idx] == 0 {
+            world.swap_indices(idx, target_idx);
         }
     }
 }

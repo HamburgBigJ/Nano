@@ -7,13 +7,6 @@ function fireBehavior(x, y, surrounding) {
             World.swap(x, y, x + dx, y);
         }
     }
-
-    for (let i = 0; i < surrounding.length; i++) {
-        let cell = surrounding[i];
-        if (cell && cell.name === "Sand") {
-            print("Fire found sand at " + cell.x + "," + cell.y);
-        }
-    }
 }
 
 function steamBehavior(x, y, surrounding) {
